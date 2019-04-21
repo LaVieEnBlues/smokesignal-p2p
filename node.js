@@ -1,5 +1,6 @@
 var smoke = require('smokesignal');
 var readline = require('readline');
+var {Blockchain} = require('./blockchain.js');
 
 //* kodiranje med vozlisci
 process.stdin.setEncoding('utf8');
@@ -38,6 +39,7 @@ console.log('Connecting...');
 //* ko se povezava vzpostavi
 node.on('connect', function() {
   console.log('Connected. Happy chatting!\n');
+  console.log(node.peers.inList());
 })
 
 //* ko se povezava prekine
@@ -60,19 +62,49 @@ rl.on('line', function (line) {
   if(line[0] === '/') {
 
     //* ukaz se zacne z '/'
-    console.log('*ukaz*')
+    //console.log('*ukaz*')
     checkCommand(line);
 
   } else {
 
     //* vse drugo ni ukaz
-    console.log('*sporocilo - posiljam*');
+    console.log('*foo*');
     node.broadcast.write(line + '\n');
   }
 });
 
-//*
-node.broadcast.pipe(process.stdout);
+
+
+
+
+//* incoming chat
+//node.broadcast.pipe(process.stdout);
+
+
+//* shranimo string chaina, ki ga dobimo
+last_received_line = ""
+
+var rb = readline.createInterface({
+  input: node.broadcast,
+  output: process.stdout,
+  terminal: false
+});
+
+rb.on('line', function (line) {
+  last_received_line = line + '\nWATERMARK\n';
+
+
+
+  //* prenesen chain je v spremenljivki line (string)
+  //* implementiraj string to chain
+
+
+});
+
+//* prenesen tekst pipamo v rb stream
+node.broadcast.pipe(rb);
+
+
 
 //* ob napaki vrzi izjemo
 node.on('error', function(e) {throw e});
@@ -80,11 +112,27 @@ node.on('error', function(e) {throw e});
 //* startaj vozlisce
 node.start();
 
+
+ex = new Blockchain();
+
+
 //* funkcija za preverjanje komande
 function checkCommand(line) {
   if(line === '/mine') {
-    process.stdout.write('blockchain not implemented yet!\n');
+
+    ex.minePending(4);
+    var myChain = '/' + String(port) + ':' + JSON.stringify(ex) + '\n';
+    //console.log(myChain);
+    node.broadcast.write(myChain);
+
+  } else if (line === '/last_received_line'){
+
+    process.stdout.write(last_received_line);
+    last_received_line = "";
+
   } else {
     process.stdout.write('unknown command!\n');
   }
 }
+
+//console.log(ex.getZadnjiBlock());
