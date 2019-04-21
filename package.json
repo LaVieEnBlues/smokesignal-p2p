@@ -1,0 +1,15 @@
+{
+  "name": "smokesignal-p2p",
+  "version": "1.0.0",
+  "description": "peer to peer network",
+  "main": "node.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "LAŽ",
+  "license": "ISC",
+  "dependencies": {
+    "smokesignal": "^0.2.2",
+    "string-to-stream": "^1.1.1"
+  }
+}
