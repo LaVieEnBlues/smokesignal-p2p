@@ -40,12 +40,12 @@ console.log('Connecting...');
 node.on('connect', function() {
   console.log('Connected. Happy chatting!\n');
   console.log(node.peers.inList());
-})
+});
 
 //* ko se povezava prekine
 node.on('disconnect', function() {
   console.log('Disconnected. Sorry.');
-})
+});
 
 //* navaden chat med vozlisci
 //* za nas ni pomembno
@@ -82,7 +82,9 @@ rl.on('line', function (line) {
 
 
 //* shranimo string chaina, ki ga dobimo
-last_received_line = ""
+addr = "";
+chain = "";
+arr = [];
 
 var rb = readline.createInterface({
   input: node.broadcast,
@@ -91,12 +93,19 @@ var rb = readline.createInterface({
 });
 
 rb.on('line', function (line) {
-  last_received_line = line + '\nWATERMARK\n';
+
 
 
 
   //* prenesen chain je v spremenljivki line (string)
   //* implementiraj string to chain
+
+
+
+  arr = line.split('^');
+  addr = arr[0];
+  chain = arr[1];
+
 
 
 });
@@ -121,14 +130,19 @@ function checkCommand(line) {
   if(line === '/mine') {
 
     ex.minePending(4);
-    var myChain = '/' + String(port) + ':' + JSON.stringify(ex) + '\n';
+    var myChain = String(port) + '^' + JSON.stringify(ex) + '^\n';
     //console.log(myChain);
     node.broadcast.write(myChain);
 
-  } else if (line === '/last_received_line'){
+  } else if (line === '/addr'){
 
-    process.stdout.write(last_received_line);
-    last_received_line = "";
+    process.stdout.write(addr);
+
+  } else if (line === '/block'){
+
+    var temp = new Blockchain();
+    temp = temp.parseJson(JSON.parse(chain));
+    console.log(temp.getZadnjiBlock());
 
   } else {
     process.stdout.write('unknown command!\n');

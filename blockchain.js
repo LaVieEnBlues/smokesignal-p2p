@@ -93,6 +93,15 @@ class Blockchain{
   getBlockchain(){
     return this.chain;
   }
+
+  parseJson(obj) {
+    this.chain = obj.chain;
+    this.difficulty = obj.difficulty;
+    this.pending = obj.pending;
+    this.reward = obj.reward;
+
+    return this;
+  }
 /*
   addBlock(newBlock){
     newBlock.previousHash = this.getZadnjiBlock().hash;
@@ -172,7 +181,7 @@ getBalance(address){
   }
 
   replaceChain(newBlocks){
-    if(newBlocks.length > getBlockchain().length){
+    if(newBlocks.length > this.chain.length){
       console.log('Received blockchain is valid. Replacing current blockchain with received blockchain');
       this.chain = newBlocks;
     }
