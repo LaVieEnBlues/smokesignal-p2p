@@ -1,6 +1,9 @@
+const {Blockchain, Transaction} = require('./blockchain');
+const EC = require('elliptic').ec;
+const ec = new EC('secp256k1');
+
 var smoke = require('smokesignal');
 var readline = require('readline');
-var {Blockchain} = require('./blockchain.js');
 
 //* kodiranje med vozlisci
 process.stdin.setEncoding('utf8');
@@ -38,14 +41,14 @@ console.log('Connecting...');
 
 //* ko se povezava vzpostavi
 node.on('connect', function() {
-  console.log('Connected. Happy chatting!\n');
+  console.log('Connected.\n');
   console.log(node.peers.inList());
-});
+})
 
 //* ko se povezava prekine
 node.on('disconnect', function() {
-  console.log('Disconnected. Sorry.');
-});
+  console.log('Disconnected.');
+})
 
 //* navaden chat med vozlisci
 //* za nas ni pomembno
@@ -60,9 +63,8 @@ var rl = readline.createInterface({
 
 rl.on('line', function (line) {
   if(line[0] === '/') {
-
     //* ukaz se zacne z '/'
-    //console.log('*ukaz*')
+    console.log('*ukaz*')
     checkCommand(line);
 
   } else {
@@ -73,12 +75,11 @@ rl.on('line', function (line) {
   }
 });
 
-
-
-
-
 //* incoming chat
 //node.broadcast.pipe(process.stdout);
+
+//* shranimo string chaina, ki ga dobimo
+last_received_line = "";
 
 var rb = readline.createInterface({
   input: node.broadcast,
@@ -88,29 +89,18 @@ var rb = readline.createInterface({
 
 rb.on('line', function (line) {
 
-
-
-
-  //* prenesen chain je v spremenljivki line (string)
-  //* implementiraj string to chain
-
-
-
-  arr = line.split('^');
-  chain = arr[1];
+  var arr = line.split('^');
+  var chain = arr[1];
   //console.log(chain);
 
   var temp = new Blockchain();
   temp = temp.parseJson(JSON.parse(chain));
-  console.log(temp);
+  console.log(temp.getBlockchain());
 
-  //* preveri, če je chain validen
-
-
-
+  //if(temp.isChainValid() == true){
+    ex.replaceChain(temp);
+  //}
 });
-
-
 
 //* prenesen tekst pipamo v rb stream
 node.broadcast.pipe(rb);
@@ -121,33 +111,59 @@ node.on('error', function(e) {throw e});
 //* startaj vozlisce
 node.start();
 
+//* funkcija za preverjanje komande
+const key = ec.genKeyPair();
+const publicKey = key.getPublic('hex');
+const privateKey= key.getPrivate('hex');
+
+const myKey = ec.keyFromPrivate(privateKey);
+const myAddress = myKey.getPublic('hex')
 
 ex = new Blockchain();
-
+console.log(ex.getZadnjiBlock());
 
 //* funkcija za preverjanje komande
 function checkCommand(line) {
-  if(line === '/mine') {
+   if(line[0] == '/' && line[1] == 'p' && line[2] == 'o' && line[3] == 's' && line[4] == 'l' && line[5] == 'i' ){
+       var temp = line.split('-');
+        console.log(temp[0]);
+       console.log("Naslov: " + temp[1]);
+       const tx1 = new Transaction(myAddress, temp[1], parseInt(temp[2], 10));
+      tx1.signTransaction(myKey);
+      ex.addTransaction(tx1);
+   }
 
-    ex.minePending(4);
+ else if(line === '/mine') {
+
+    ex.minePending(myAddress);
     var myChain = String(port) + '^' + JSON.stringify(ex) + '^\n';
-    console.log(ex);
+    //console.log(myChain);
     node.broadcast.write(myChain);
-    //console.log(ex);
-
-  } else if (line === '/addr'){
-
-    process.stdout.write(addr);
-
-  } else if (line === '/block'){
-
-    var temp = new Blockchain();
-    temp = temp.parseJson(JSON.parse(chain));
-    console.log(temp);
-
-  } else {
-    process.stdout.write('unknown command!\n');
   }
-}
+  else if (line === '/last_received_line'){
+    process.stdout.write(last_received_line);
+    last_received_line = "";
+  }
+  else if(line === '/celotna') {
+    //console.log(ex.getBlockchain());
+    console.log(ex);
+  }
+  else if(line === '/zadnji') {
+    console.log(ex.getZadnjiBlock());
+  }
+  else if(line === '/balance') {
+    console.log(ex.getBalance(myAddress));
+  }
+  else if(line === '/valid') {
+    console.log(ex.isChainValid());
+  }
 
-//console.log(ex.getZadnjiBlock());
+  else if(line === '/mojnaslov') {
+    console.log(myAddress);
+  }
+
+
+  else {
+    console.log('unknown command!');
+  };
+}

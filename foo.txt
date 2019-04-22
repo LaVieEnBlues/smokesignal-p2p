@@ -1,0 +1,19 @@
+var rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false
+});
+
+rl.on('line', function (line) {
+  if(line[0] === '/') {
+    //* ukaz se zacne z '/'
+    console.log('*ukaz*')
+    checkCommand(line);
+
+  } else {
+
+    //* vse drugo ni ukaz
+    console.log('*foo*');
+    node.broadcast.write(line + '\n');
+  }
+});

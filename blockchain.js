@@ -3,20 +3,22 @@ const EC = require('elliptic').ec;
 const ec = new EC('secp256k1');
 
 class Transaction{
-  constructor(from,to,ammount){
-    this.from = from;
-    this.to = to;
-    this.ammount = ammount;
-    this.timestamp = Date.now();
-  }
+  constructor(from,to,ammount,timestamp){
+    if(arguments.length == 3) {
 
-  parseJson(obj) {
-    this.from = obj.from;
-    this.to = obj.to;
-    this.ammount = obj.ammount;
-    this.timestamp = obj.timestamp;
+      this.from = from;
+      this.to = to;
+      this.ammount = ammount;
+      this.timestamp = Date.now();
 
-    return this;
+    } else if(arguments.length == 4) {
+
+      this.from = from;
+      this.to = to;
+      this.ammount = ammount;
+      this.timestamp = Number(timestamp);
+
+    }
   }
 
   calculateHash(){
@@ -49,34 +51,35 @@ class Transaction{
 
 
 class Block{
-  constructor(index, timestamp, data, transactions, previousHash = ''){
-    this.index = index;
-    this.timestamp = timestamp;
-    this.data = data;
-    this.previousHash = previousHash;
-    this.transactions = transactions;
-    this.hash = this.calculateHash();
-    this.nonce = 0;
-  }
+  constructor(index, timestamp, data, transactions, previousHash = '', hash, nonce){
+    if(arguments.length == 5) {
 
-  parseJson(obj) {
+      this.index = index;
+      this.timestamp = timestamp;
+      this.data = data;
+      this.transactions = transactions;
+      this.previousHash = previousHash;
+      this.hash = this.calculateHash();
+      this.nonce = 0;
 
-    this.index = obj.index;
-    this.timestamp = obj.timestamp;
-    this.data = obj.data;
-    this.previousHash = obj.previousHash;
-    this.transactions = this.parseStringTransactions(obj.transactions);
-    this.hash = obj.hash;
-    this.nonce = obj.nonce;
+    } else if(arguments.length == 7) {
 
-    return this;
+      this.index = index;
+      this.timestamp = timestamp;
+      this.data = data;
+      this.transactions = this.parseStringTransactions(transactions);
+      this.previousHash = previousHash;
+      this.hash = hash;
+      this.nonce = nonce;
+
+    }
   }
 
   parseStringTransactions(trans) {
     var newTrans = [];
     for(var i = 0; i < trans.length; i++) {
-      var tempTrans = new Transaction("foo", "foo", 0);
-      newTrans.push(tempTrans.parseJson(trans[i]));
+      var tempTrans = new Transaction(trans[i].from, trans[i].to, trans[i].ammount, trans[i].timestamp);
+      newTrans.push(tempTrans);
     }
     return newTrans;
   }
@@ -127,11 +130,15 @@ class Blockchain{
   }
 
   parseStringChain(chain) {
+
     var newChain = [];
+
     for(var i = 0; i < chain.length; i++) {
+
       var tempBlock = chain[i];
-      var tempChain = new Blockchain();
-      newChain.push(tempChain.getZadnjiBlock().parseJson(tempBlock));
+      var newBlock = new Block(tempBlock.index, tempBlock.timestamp, tempBlock.data, tempBlock.transactions, tempBlock.previousHash, tempBlock.hash, tempBlock.nonce)
+
+      newChain.push(newBlock);
     }
     return newChain;
   }
@@ -139,8 +146,8 @@ class Blockchain{
   parseStringPending(trans) {
     var newTrans = [];
     for(var i = 0; i < trans.length; i++) {
-      var tempTrans = new Transaction("foo", "foo", 0);
-      newTrans.push(tempTrans.parseJson(trans[i]));
+      var tempTrans = new Transaction(trans[i].from, trans[i].to, trans[i].ammount, trans[i].timestamp);
+      newTrans.push(tempTrans);
     }
     return newTrans;
   }
@@ -158,7 +165,7 @@ class Blockchain{
   }
 
 minePending(rewardAddress){
-  let block = new Block(this.getZadnjiBlock().index+1,Date.now(), "podatki", this.pending, this.getZadnjiBlock().hash);
+  let block = new Block(this.getZadnjiBlock().index + 1,Date.now(), "podatki", this.pending, this.getZadnjiBlock().hash);
   block.mineBlock(this.difficulty);
 
     console.log('Uspesno majnamo');
@@ -184,7 +191,7 @@ addTransaction(transaction){
 }
 
 getBalance(address){
-  let balance = 0;
+  let balance = 100;
 
   for(const block of this.chain){
     for(const trans of block.transactions){
@@ -228,9 +235,9 @@ isChainValid(){
 }
 
   replaceChain(newBlocks){
-    if(newBlocks.length > this.chain.length){
+    if(newBlocks.getBlockchain().length > this.chain.length){
       console.log('Received blockchain is valid. Replacing current blockchain with received blockchain');
-      this.chain = newBlocks;
+      this.chain = newBlocks.getBlockchain();
     }
     else {
         console.log('Received blockchain invalid');
