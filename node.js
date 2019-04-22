@@ -80,12 +80,6 @@ rl.on('line', function (line) {
 //* incoming chat
 //node.broadcast.pipe(process.stdout);
 
-
-//* shranimo string chaina, ki ga dobimo
-addr = "";
-chain = "";
-arr = [];
-
 var rb = readline.createInterface({
   input: node.broadcast,
   output: process.stdout,
@@ -103,17 +97,23 @@ rb.on('line', function (line) {
 
 
   arr = line.split('^');
-  addr = arr[0];
   chain = arr[1];
+  //console.log(chain);
+
+  var temp = new Blockchain();
+  temp = temp.parseJson(JSON.parse(chain));
+  console.log(temp);
+
+  //* preveri, če je chain validen
 
 
 
 });
 
+
+
 //* prenesen tekst pipamo v rb stream
 node.broadcast.pipe(rb);
-
-
 
 //* ob napaki vrzi izjemo
 node.on('error', function(e) {throw e});
@@ -131,8 +131,9 @@ function checkCommand(line) {
 
     ex.minePending(4);
     var myChain = String(port) + '^' + JSON.stringify(ex) + '^\n';
-    //console.log(myChain);
+    console.log(ex);
     node.broadcast.write(myChain);
+    //console.log(ex);
 
   } else if (line === '/addr'){
 
@@ -142,7 +143,7 @@ function checkCommand(line) {
 
     var temp = new Blockchain();
     temp = temp.parseJson(JSON.parse(chain));
-    console.log(temp.getZadnjiBlock());
+    console.log(temp);
 
   } else {
     process.stdout.write('unknown command!\n');

@@ -10,6 +10,15 @@ class Transaction{
     this.timestamp = Date.now();
   }
 
+  parseJson(obj) {
+    this.from = obj.from;
+    this.to = obj.to;
+    this.ammount = obj.ammount;
+    this.timestamp = obj.timestamp;
+
+    return this;
+  }
+
   calculateHash(){
     return SHA256(this.from + this.to + this.ammount + this.timestamp).toString();
   }
@@ -50,6 +59,28 @@ class Block{
     this.nonce = 0;
   }
 
+  parseJson(obj) {
+
+    this.index = obj.index;
+    this.timestamp = obj.timestamp;
+    this.data = obj.data;
+    this.previousHash = obj.previousHash;
+    this.transactions = this.parseStringTransactions(obj.transactions);
+    this.hash = obj.hash;
+    this.nonce = obj.nonce;
+
+    return this;
+  }
+
+  parseStringTransactions(trans) {
+    var newTrans = [];
+    for(var i = 0; i < trans.length; i++) {
+      var tempTrans = new Transaction("foo", "foo", 0);
+      newTrans.push(tempTrans.parseJson(trans[i]));
+    }
+    return newTrans;
+  }
+
   calculateHash(){
     return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data) + JSON.stringify(this.transactions) + this.nonce).toString();
   }
@@ -82,6 +113,38 @@ class Blockchain{
 
   }
 
+  parseJson(obj) {
+
+    this.chain = this.parseStringChain(obj.chain);
+
+    this.difficulty = obj.difficulty;
+
+    this.pending = this.parseStringPending(obj.pending);
+
+    this.reward = obj.reward;
+
+    return this;
+  }
+
+  parseStringChain(chain) {
+    var newChain = [];
+    for(var i = 0; i < chain.length; i++) {
+      var tempBlock = chain[i];
+      var tempChain = new Blockchain();
+      newChain.push(tempChain.getZadnjiBlock().parseJson(tempBlock));
+    }
+    return newChain;
+  }
+
+  parseStringPending(trans) {
+    var newTrans = [];
+    for(var i = 0; i < trans.length; i++) {
+      var tempTrans = new Transaction("foo", "foo", 0);
+      newTrans.push(tempTrans.parseJson(trans[i]));
+    }
+    return newTrans;
+  }
+
   createFirstBlock(){
     return new Block(0, Date.parse('2000-1-5'), "Prvi block",[] , "0");
   }
@@ -93,22 +156,6 @@ class Blockchain{
   getBlockchain(){
     return this.chain;
   }
-
-  parseJson(obj) {
-    this.chain = obj.chain;
-    this.difficulty = obj.difficulty;
-    this.pending = obj.pending;
-    this.reward = obj.reward;
-
-    return this;
-  }
-/*
-  addBlock(newBlock){
-    newBlock.previousHash = this.getZadnjiBlock().hash;
-    newBlock.mineBlock(this.difficulty);
-    this.chain.push(newBlock);
-  }
-*/
 
 minePending(rewardAddress){
   let block = new Block(this.getZadnjiBlock().index+1,Date.now(), "podatki", this.pending, this.getZadnjiBlock().hash);
@@ -152,33 +199,33 @@ getBalance(address){
   return balance;
 }
 
-  isChainValid(){
-    const realGenesis = JSON.stringify(this.createFirstBlock());
-    if(realGenesis !== JSON.stringify(this.chain[0])){
+isChainValid(){
+  const realGenesis = JSON.stringify(this.createFirstBlock());
+  if(realGenesis !== JSON.stringify(this.chain[0])){
+    return false;
+  }
+
+  for(let i = 1; i<this.chain.length; i++){
+    const currentBlock = this.chain[i];
+    const previousBlock = this.chain[i-1];
+
+    //console.log(JSON.stringify(currentBlock));
+    //console.log(JSON.stringify(previousBlock));
+
+    if(!currentBlock.hasValidTransaction()){
       return false;
     }
 
-      for(let i = 1; i<this.chain.length; i++){
-        const currentBlock = this.chain[i];
-        const previousBlock = this.chain[i-1];
+    if(currentBlock.hash !== currentBlock.calculateHash()){
+      return false;
+    }
 
-        //console.log(JSON.stringify(currentBlock));
-        //console.log(JSON.stringify(previousBlock));
-
-        if(!currentBlock.hasValidTransaction()){
-          return false;
-        }
-
-        if(currentBlock.hash !== currentBlock.calculateHash()){
-          return false;
-        }
-
-        if(currentBlock.previousHash !== previousBlock.hash){
-          return false;
-        }
-      }
-      return true;
+    if(currentBlock.previousHash !== previousBlock.hash){
+      return false;
+    }
   }
+  return true;
+}
 
   replaceChain(newBlocks){
     if(newBlocks.length > this.chain.length){
